@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>McNemar's Test - Blog</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.8;
+            margin: 40px;
+            background: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2, h3 {
+            color: #222;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 1rem;
+        }
+
+        code {
+            font-family: Consolas, "Courier New", monospace;
+        }
+
+        ul {
+            margin-left: 20px;
+            padding-left: 20px;
+        }
+
+        p {
+            font-size: 1.1rem;
+        }
+
+        .collapsible-header {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            margin-bottom: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .collapsible-content {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-top: none;
+            display: none;
+        }
+
+        .collapsible-content.show {
+            display: block;
+        }
+
+        .toggle-icon {
+            font-weight: bold;
+        }
+    </style>
+
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>McNemar's Test Tutorial</h1>
+
+        <p><strong>Module:</strong> Practical Data Science in Chemistry with Python</p>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">Introduction <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <p>McNemar's Test is a statistical method used to analyse paired nominal (categorical) data, often applied in "before-and-after" or "matched pairs" scenarios. For example, consider evaluating whether a new in vitro diagnostic (IVD) test improves selectivity compared to an existing gold-standard test, using the same set of samples.</p>
+                <p>This test focuses on changes in responses rather than absolute values, making it ideal for cases where subjects (e.g., samples, experiments) act as their own controls.</p>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">Key Idea (Simple Terms) <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <p>McNemar’s Test identifies differences in yes/no outcomes when testing the same group under different conditions (e.g., old vs. new method).</p>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">Technical Definition <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <p>McNemar's Test is a non-parametric test for paired dichotomous data, assessing marginal homogeneity in a 2x2 contingency table.</p>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">When to Use McNemar’s Test <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <p>You should use McNemar’s Test when:</p>
+                <ul>
+                    <li>✅ You have paired data (e.g., the same participants or samples measured twice).</li>
+                    <li>✅ The variable you are measuring is categorical with two possible values (e.g., Yes/No, Pass/Fail, Success/Failure).</li>
+                    <li>✅ You want to determine whether the proportions changed significantly after an intervention.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">CASE STUDY: Evaluating Selectivity in In Vitro Diagnostics (IVD) Using McNemar’s Test <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <h3>Real-World Example: Comparing a New Diagnostic Test to a Gold-Standard Method</h3>
+                <p>Imagine a laboratory developing a new diagnostic test (Test A) for detecting a viral infection. To assess its performance, the lab compares it against an established gold-standard test (Test B). The primary focus is selectivity—the ability to correctly identify negative samples and minimize false positives.</p>
+                <p>The study involves 100 patient samples, each tested with both methods. The results are recorded as positive (1) or negative (0) for each test. The goal is to determine whether Test A and Test B classify negative samples differently and, if so, whether the difference is statistically significant.</p>
+
+                <h3>Understanding Selectivity in This Context</h3>
+
+                <h4>What is Selectivity?</h4>
+                <ul>
+                    <li><strong>Technical Definition:</strong> Selectivity in diagnostics refers to a test’s ability to correctly classify negative samples, ensuring it does not falsely identify them as positive. It is closely related to specificity, which quantifies the proportion of true negatives correctly identified.</li>
+                    <li><strong>Intuitive Explanation:</strong> A highly selective test avoids false alarms—它正确区分真阴性和假阳性结果。</li>
+                </ul>
+
+                <h4>Why McNemar’s Test?</h4>
+                <ul>
+                    <li>When comparing two diagnostic methods on the same set of samples, McNemar’s Test is ideal because it focuses on paired categorical data (positive/negative classifications).</li>
+                    <li>It assesses whether the disagreement in classification between the tests is balanced or biased—if one test systematically classifies more negative samples as positive, it suggests a difference in selectivity.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">Research Question, Hypotheses, and Predictions <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <p>Before conducting McNemar’s Test, it's essential to clearly define the research question, establish null and alternative hypotheses, and outline expected outcomes. This ensures methodological rigor and interpretable results.</p>
+
+                <h2>Research Question</h2>
+
+                <p>"Does the new diagnostic test (Test A) differ significantly from the gold-standard test (Test B) in correctly classifying negative samples (selectivity)?"</p>
+
+                <ul>
+                    <li><strong>Primary focus:</strong> Whether Test A misclassifies negative samples more or less frequently than Test B.</li>
+                    <li><strong>Importance:</strong> In clinical diagnostics, false positives can lead to unnecessary treatments, while false negatives may delay critical care.</li>
+                </ul>
+
+                <h2>Null and Alternative Hypotheses</h2>
+
+                <h3>Null Hypothesis (H₀)</h3>
+
+                <p>"There is no significant difference in selectivity between Test A and Test B."</p>
+
+                <p>Mathematically, this means:</p>
+
+                <p>
+                    <span class="math-block">P\_\{\\text\{A → Positive \| B → Negative\}\} \= P\_\{\\text\{A → Negative \| B → Positive\}\}</span>
+                </p>
+
+                <p>Or equivalently, in terms of discordant pairs:</p>
+
+                <p>
+                    <span class="math-block">b \= c</span>
+                </p>
+
+                <p>where:</p>
+
+                <ul>
+                    <li><span class="math-inline">b</span>: Cases where Test A classifies negative, but Test B classifies positive.</li>
+                    <li><span class="math-inline">c</span>: Cases where Test A classifies positive, but Test B classifies negative.</li>
+                </ul>
+
+                <h3>Alternative Hypothesis (H₁)</h3>
+
+                <p>"There is a significant difference in selectivity between Test A and Test B."</p>
+
+                <p>This suggests:</p>
+
+                <p>
+                    $$P_{\text{A → Positive | B → Negative}} \neq P_{\text{A → Negative | B → Positive}}$$
+                </p>
+
+                <p>Or in discordant pairs:</p>
+
+                <p>
+                    $$b \neq c$$
+                </p>
+
+                <p>A significant result would indicate that one test systematically classifies more negative samples as positive than the other.</p>
+
+                <h2>Predictions Based on Different Outcomes</h2>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Outcome</th>
+                            <th>Interpretation</th>
+                            <th>Decision</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>b ≈ c, p ≥ 0.05</td>
+                            <td>No significant difference in selectivity.</td>
+                            <td>Fail to reject H₀. Test A performs similarly to Test B.</td>
+                        </tr>
+                        <tr>
+                            <td>b > c, p < 0.05</td>
+                            <td>Test A is more selective than Test B (fewer false positives).</td>
+                            <td>Reject H₀. Test A has significantly better selectivity.</td>
+                        </tr>
+                        <tr>
+                            <td>b < c, p < 0.05</td>
+                            <td>Test A is less selective than Test B (more false positives).</td>
+                            <td>Reject H₀. Test A has significantly worse selectivity.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="collapsible">
+            <h2 class="collapsible-header">Step 1: Load and Organize Data <span class="toggle-icon">+</span></h2>
+            <div class="collapsible-content">
+                <p>First, we load the dataset, which contains test results from two diagnostic tests (Test A and Test B). These results are recorded as binary outcomes:</p>
+
+                <ul>
+                    <li>1 = Positive result</li>
+                    <li>0 = Negative result</li>
+                </ul>
+
+                <p>The dataset should be stored as a CSV file (McNemars_IVD_synthetic_data.csv), where each row represents a patient, and each column represents a test result.</p>
+
+                <pre><code>import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load the dataset
+df = pd.read_csv("McNemars_IVD_synthetic_data.csv")
+</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+
+            collapsibleHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('.toggle-icon');
+
+                    content.classList.toggle('show');
+
+                    if (content.classList.contains('show')) {
+                        icon.textContent = '-';
+                    } else {
+                        icon.textContent = '+';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
