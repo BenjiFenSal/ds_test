@@ -132,7 +132,7 @@
                 <h4>What is Selectivity?</h4>
                 <ul>
                     <li><strong>Technical Definition:</strong> Selectivity in diagnostics refers to a test’s ability to correctly classify negative samples, ensuring it does not falsely identify them as positive. It is closely related to specificity, which quantifies the proportion of true negatives correctly identified.</li>
-                    <li><strong>Intuitive Explanation:</strong> A highly selective test avoids false alarms—它正确区分真阴性和假阳性结果。</li>
+                    <li><strong>Intuitive Explanation:</strong> A highly selective test avoids false alarms—it correctly distinguishes between truly negative and falsely positive results. </li>
                 </ul>
 
                 <h4>Why McNemar’s Test?</h4>
@@ -165,9 +165,9 @@
 
                 <p>Mathematically, this means:</p>
 
-                <p>
-                    <span class="math-block">P\_\{\\text\{A → Positive \| B → Negative\}\} \= P\_\{\\text\{A → Negative \| B → Positive\}\}</span>
-                </p>
+		<p>
+    		$$ P_{\text{A → Positive | B → Negative}} = P_{\text{A → Negative | B → Positive}} $$
+		</p>
 
                 <p>Or equivalently, in terms of discordant pairs:</p>
 
@@ -250,8 +250,282 @@ import matplotlib.pyplot as plt
 # Load the dataset
 df = pd.read_csv("McNemars_IVD_synthetic_data.csv")
 </code></pre>
+
             </div>
         </div>
+
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Step 2: Construct the 2×2 Contingency Table<span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <p>A contingency table is used to compare the results of Test A and Test B. The <code>pd.crosstab()</code> function is used to generate this table, summarizing how often each test agrees or disagrees.</p>
+
+ <pre><code># Create the 2x2 contingency table
+contingency_table = pd.crosstab(df["Test A"], df["Test B"])
+
+# Rename index and column labels for clarity
+contingency_table.index = ["Test A Negative (0)", "Test A Positive (1)"]
+contingency_table.columns = ["Test B Negative (0)", "Test B Positive (1)"]
+</code></pre>    
+       
+ <p>This will generate a table in the following format:</p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test A \ Test B</th>
+                    <th>Negative (0)</th>
+                    <th>Positive (1)</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>Negative (0)</th>
+                    <td>85</td>
+                    <td>5</td>
+                    <td>90</td>
+                </tr>
+                <tr>
+                    <th>Positive (1)</th>
+                    <td>3</td>
+                    <td>7</td>
+                    <td>10</td>
+                </tr>
+                <tr>
+                    <th>Total</th>
+                    <td>88</td>
+                    <td>12</td>
+                    <td>100</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Step 3: Compute Proportions<span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <p>To better understand the distribution of test results, we calculate proportions by dividing each count by the total number of observations.</p>
+        <p>This outputs a normalized version of the table where each value represents the percentage of total cases in that category.</p>
+
+        <pre><code># Calculate the total number of observations
+total_counts = contingency_table.sum().sum()
+
+# Calculate the proportions for each category
+proportions = contingency_table / total_counts
+</code></pre>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Step 4: Visualize the Contingency Table<span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <p>To make the results easier to interpret, we generate a heatmap using Seaborn (<code>sns.heatmap</code>). This provides a visual representation of how frequently each test result combination occurs.</p>
+        <p>This heatmap helps identify where discrepancies between the two tests occur.</p>
+
+        <pre><code># Heatmap of the Contingency Table
+plt.figure(figsize=(5,4))
+sns.heatmap(contingency_table, annot=True, fmt='d', cmap="Blues", linewidths=0.5)
+plt.title("Contingency Table Heatmap")
+plt.show()
+</code></pre>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Next Steps: McNemar’s Test<span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <p>To determine if there is a statistically significant difference in test selectivity, McNemar’s test should be applied. This requires calculating:</p>
+        <ul>
+            <li>b (false negatives) = 5</li>
+            <li>c (false positives) = 3</li>
+        </ul>
+        <p>Then, using:</p>
+        <p>
+            $$\chi^2 = \frac{(b - c)^2}{b + c}$$
+        </p>
+        <p>which can be implemented in Python using <code>scipy.stats</code>.</p>
+        <p>If χ² < 3.84 (at α = 0.05), we fail to reject the null hypothesis, meaning there is no significant difference between the tests.</p>
+
+        <pre><code>from scipy.stats import chi2_contingency
+
+b, c = contingency_table.iloc[0, 1], contingency_table.iloc[1, 0]  # False negatives and false positives
+chi2_stat = (abs(b - c) - 1) ** 2 / (b + c)  # Correction for small sample sizes
+p_value = 1 - chi2_contingency(contingency_table, correction=False)[1]  # Chi-square test
+
+print(f"Chi-square statistic: {chi2_stat:.3f}")
+print(f"P-value: {p_value:.3f}")
+</code></pre>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Summary of Practical Implementation<span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <p>Here's a summary of the practical steps involved:</p>
+        <ol>
+            <li>Load the data and ensure it contains two binary test result columns.</li>
+            <li>Create a contingency table to compare Test A vs. Test B.</li>
+            <li>Compute proportions for better interpretation.</li>
+            <li>Visualize the table using a heatmap.</li>
+            <li>Perform McNemar’s test to determine if Test A and Test B differ significantly.</li>
+        </ol>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Key Takeaways <span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <ul>
+            <li>✔ McNemar’s Test is ideal for comparing the selectivity of two diagnostic tests using the same set of samples.</li>
+            <li>✔ It focuses on discordant pairs rather than overall classification accuracy.</li>
+            <li>✔ Use the exact test when b + c < 25 for better accuracy.</li>
+            <li>✔ A small p-value (< 0.05) suggests a real difference in test performance.</li>
+            <li>✔ McNemar’s Test does not measure effect size, only whether a significant difference exists.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Limitations of McNemar’s Test <span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <ul>
+            <li>Only applies to paired binary data.
+                <ul>
+                    <li>If data has more than two categories, use an alternative test.</li>
+                    <li>If data is not paired, use a Chi-Square test instead.</li>
+                </ul>
+            </li>
+            <li>Sensitive to small sample sizes—for b + c < 25, use the exact binomial test.</li>
+            <li>Does not measure effect size—it detects differences but does not quantify them.</li>
+            <li>Cannot determine causation—only association.</li>
+        </ul>
+    </div>
+</div>
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Glossary of Key Terms <span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <ol>
+            <li><strong>McNemar’s Test</strong>
+                <ul>
+                    <li>Formal Definition: A statistical test used to compare paired binary data to assess whether there is a significant difference in classification proportions between two conditions. It is a non-parametric test that examines marginal homogeneity in a 2×2 contingency table.</li>
+                    <li>Intuitive Explanation: Think of it as a way to check if two tests (or methods) classify the same samples differently, focusing only on cases where they disagree.</li>
+                </ul>
+            </li>
+            <li><strong>Paired Data</strong>
+                <ul>
+                    <li>Formal Definition: Data where each observation in one condition is directly linked to an observation in another condition, meaning the two measurements come from the same subject or sample.</li>
+                    <li>Intuitive Explanation: Each test result comes in a "before-and-after" pair—like testing the same patient with two different diagnostic methods.</li>
+                </ul>
+            </li>
+            <li><strong>Binary Data</strong>
+                <ul>
+                    <li>Formal Definition: Data with only two possible outcomes, often represented as 0 and 1 (e.g., Positive/Negative, Success/Failure).</li>
+                    <li>Intuitive Explanation: A simple yes-or-no decision, like whether a test result is positive or negative.</li>
+                </ul>
+            </li>
+            <li><strong>Contingency Table</strong>
+                <ul>
+                    <li>Formal Definition: A matrix used to display the frequency distribution of categorical data, summarizing how two variables interact.</li>
+                    <li>Intuitive Explanation: A grid that organizes test results, showing where the two tests agree and where they disagree.</li>
+                </ul>
+            </li>
+            <li><strong>Discordant Pairs</strong>
+                <ul>
+                    <li>Formal Definition: Observations where two paired tests produce different results (one test is positive, the other is negative).</li>
+                    <li>Intuitive Explanation: Cases where one test says "yes" and the other says "no"—these are the only results that matter in McNemar’s Test.</li>
+                </ul>
+            </li>
+            <li><strong>Null Hypothesis (H₀)</strong>
+                <ul>
+                    <li>Formal Definition: The assumption that there is no significant difference between the two paired conditions (i.e., both tests perform similarly).</li>
+                    <li>Intuitive Explanation: The starting assumption that any difference between the tests is due to random chance.</li>
+                </ul>
+            </li>
+            <li><strong>Alternative Hypothesis (H₁)</strong>
+                <ul>
+                    <li>Formal Definition: The hypothesis stating that a significant difference exists between the two paired conditions.</li>
+                    <li>Intuitive Explanation: The idea that one test really does perform differently (better or worse) than the other.</li>
+                </ul>
+            </li>
+            <li><strong>Chi-Squared Statistic (χ²)</strong>
+                <ul>
+                    <li>Formal Definition: A statistical measure that quantifies the difference between observed and expected frequencies in categorical data. For McNemar’s Test, it measures the imbalance in discordant pairs.</li>
+                    <li>Intuitive Explanation: A way to see how much disagreement between the tests is due to real differences rather than random chance.</li>
+                </ul>
+            </li>
+            <li><strong>p-value</strong>
+                <ul>
+                    <li>Formal Definition: The probability of obtaining results as extreme as (or more extreme than) the observed ones, assuming the null hypothesis is true.</li>
+                    <li>Intuitive Explanation: A number that tells us whether the difference between the tests is likely just random (high p-value) or actually meaningful (low p-value).</li>
+                </ul>
+            </li>
+            <li><strong>Exact Binomial Test</strong>
+                <ul>
+                    <li>Formal Definition: A test used when sample sizes are small (b + c < 25), treating the discordant cases as outcomes of a binomial process with a 50% expected probability.</li>
+                    <li>Intuitive Explanation: A more precise version of McNemar’s Test for small datasets—like flipping a coin multiple times to see if one side comes up significantly more often than expected.</li>
+                </ul>
+            </li>
+            <li><strong>Selectivity</strong>
+                <ul>
+                    <li>Formal Definition: The ability of a diagnostic test to correctly classify negative cases, minimizing false positives.</li>
+                    <li>Intuitive Explanation: How well a test avoids mistakenly identifying something as positive when it’s actually negative.</li>
+                </ul>
+            </li>
+            <li><strong>Effect Size</strong>
+                <ul>
+                    <li>Formal Definition: A quantitative measure of the strength or magnitude of a difference between groups, often used to complement significance tests.</li>
+                    <li>Intuitive Explanation: Even if two tests are different, how big is the difference? McNemar’s Test tells us if there’s a difference, but effect size tells us how important that difference is.</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+</div>
+
+
+<div class="collapsible">
+    <h2 class="collapsible-header">Try it out! Example Code in Full<span class="toggle-icon">+</span></h2>
+    <div class="collapsible-content">
+        <pre><code>import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load the dataset
+df = pd.read_csv("McNemars_IVD_synthetic_data.csv")
+
+# Create the 2x2 contingency table
+contingency_table = pd.crosstab(df["Test A"], df["Test B"])
+contingency_table.index = ["Test A Negative (0)", "Test A Positive (1)"]
+contingency_table.columns = ["Test B Negative (0)", "Test B Positive (1)"]
+
+# Calculate the total number of observations
+total_counts = contingency_table.sum().sum()
+
+# Calculate the proportions for each category
+proportions = contingency_table / total_counts
+
+# Display the contingency table and proportions
+print("Contingency Table:\n", contingency_table)
+print("\nProportions Table:\n", proportions)
+
+# Heatmap of the Contingency Table
+plt.figure(figsize=(5,4))
+sns.heatmap(contingency_table, annot=True, fmt='d', cmap="Blues", linewidths=0.5)
+plt.title("Contingency Table Heatmap")
+plt.show()
+</code></pre>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
     </div>
 
     <script>
